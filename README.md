@@ -1,6 +1,6 @@
 # Gale-Shapley-Algorithm 
 
-In Colaboration with [@benberube](https://github.com/bberube2000)
+
 
 Implementation of a popular stable-matching algorithm which produces an array containing a matching between two input sets. Program runs in O(n^2) time, utilizing dictionaries and queues to access data structures in constant time. Sample input and solution files are included.   
 
@@ -33,3 +33,9 @@ student 1 preferences
 
 student 1 preferences
 
+
+
+
+
+----
+In Colaboration with [@benberube](https://github.com/bberube2000)
