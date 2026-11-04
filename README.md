@@ -2,7 +2,7 @@
 
 
 
-Implementation of a popular stable-matching algorithm which produces an array containing a matching between two input sets. Program runs in O(H + S + P) time, where H is the number of hospitals, S the number of students and P the total length of all preference lists. Student rankings are stored in per-student dictionaries and hospitals walk their preference lists with a pointer, so every proposal is resolved in constant time. Sample input and solution files are included. Run the tests with `python3 -m unittest`.
+Implementation of a popular stable-matching algorithm which produces an array containing a matching between two input sets. Program runs in O(n^2) time in the worst case (n = max(hospitals, students)), and more precisely O(H + S + P) where H is the number of hospitals, S the number of students and P the total length of all preference lists (P <= 2n^2), which is optimal since the input itself has size P. Student rankings are stored in per-student dictionaries and hospitals walk their preference lists with a pointer, so every proposal is resolved in constant time. Sample input and solution files are included. Run the tests with `python3 -m unittest`.
 
 The extensions of the
 basic version of the problem are:

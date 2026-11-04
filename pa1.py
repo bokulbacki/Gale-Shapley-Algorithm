@@ -12,7 +12,8 @@ def gale_shapley(filename):
     Returns a list containing hospitals assigned to each
     student, or None if a student is not assigned to a hospital.
 
-    Runs in O(H + S + total preference-list length) time and space: every
+    Runs in O(n^2) worst-case time and space (n = max(hospitals, students)),
+    i.e. O(H + S + P) with P the total preference-list length (P <= 2n^2): every
     hospital proposes to each student at most once, and every proposal is
     resolved with O(1) dictionary/array lookups.
     """
