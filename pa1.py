@@ -11,115 +11,70 @@ def gale_shapley(filename):
     given in problem statement.
     Returns a list containing hospitals assigned to each
     student, or None if a student is not assigned to a hospital.
+
+    Runs in O(n^2) worst-case time and space (n = max(hospitals, students)),
+    i.e. O(H + S + P) with P the total preference-list length (P <= 2n^2): every
+    hospital proposes to each student at most once, and every proposal is
+    resolved with O(1) dictionary/array lookups.
     """
 
-    # Open file and parse contents into corresponding variables and data structures
-    f = open(filename, "r")
-    line = f.readline().split()
-    # Derive number of students and hospitals
-    num_hospitals = line[0]
-    num_students = line[1]
-    # Read next line and create dictionary pairing hospitals to their open positions
-    hospital_positions = {}
-    student_positions = {}
-    """
-    key: hospital name/index
-    value: (capacity, [ranking of students])
-    """
-    line = f.readline()
-    line_split = line.split()
-    for i in range(0, int(num_hospitals)):
-        hospital_positions[i] = (int(line_split[i]), [])
+    # ----PRE PROCESSING----
+    with open(filename, "r") as f:
+        lines = f.read().split("\n")
 
-    """----PRE PROCESSING----"""
+    def row(i):
+        # Preference lists may be empty, so index by line rather than by token.
+        return lines[i].split() if i < len(lines) else []
 
-    for i in range(0, int(num_hospitals)):
-        line = f.readline()
-        line_split = line.split()
-        # for (j in range(0, len(line_split))
-        hospital_positions[i][1].append(line_split)
-        hospital_positions[i] = (hospital_positions[i][0], hospital_positions[i][1].pop())
-    # print(hospital_positions)
+    header = row(0)
+    num_hospitals = int(header[0])
+    num_students = int(header[1])
 
-    for i in range(0, int(num_students)):
-        line = f.readline()
-        line_split = line.split()
-        student_positions[i] = []
-        student_positions[i].append(line_split)
-        student_positions[i] = (student_positions[i].pop())
+    # remaining[h]: open positions left at hospital h
+    remaining = [int(c) for c in row(1)[:num_hospitals]]
 
-    for key in student_positions:
-        new_invt_array = []
-        for j in range(0, int(num_hospitals)):
-            # print(student_positions[key])
-            try:
-                new_invt_array.append(student_positions[key].index(str(j)))
-            except ValueError:
-                new_invt_array.append(None)
+    # hospital_prefs[h]: students in h's preference order; next_idx[h] is the
+    # next student h will propose to (replaces O(n) list.pop(0)).
+    hospital_prefs = [[int(s) for s in row(2 + h)] for h in range(num_hospitals)]
+    next_idx = [0] * num_hospitals
 
-        student_positions[key] = new_invt_array
-        # index in the array is the hospital name, value is its ranking according to student. Hospitals deemed unnacceptable by students hold a value of "None"
+    # student_rank[s][h]: rank of hospital h for student s (lower is better);
+    # missing key means h is unacceptable to s. Built in O(len(list)) instead of
+    # calling list.index() once per hospital.
+    student_rank = []
+    base = 2 + num_hospitals
+    for s in range(num_students):
+        student_rank.append({int(h): r for r, h in enumerate(row(base + s))})
 
-    hospitalQ = []
-    final_pairing = []
-    for i in range(0, int(num_students)):
-        final_pairing.append(None)  # student as index
-    for i in range(int(num_hospitals)):
-        hospitalQ.append(i)
+    final_pairing = [None] * num_students  # student as index
 
-    """    for i in range(int(num_hospitals)):
-        while(hospital_positions[i][0]>0):
-            hospitalQ.append(i)
-            hospital_positions[i] = (hospital_positions[i][0] - 1, hospital_positions[i][1])
-    """
-    # Close file
-    f.close()
+    # ----GALE SHAPLEY STARTS NOW----
+    # Only hospitals that can still propose are placed on the stack.
+    free = [h for h in range(num_hospitals) if remaining[h] > 0 and hospital_prefs[h]]
 
-    """    ----GALE SHAPLEY STARTS NOW----    
-            """
-
-    while len(hospitalQ) > 0:
-        h = hospitalQ.pop()
-        if hospital_positions[h][0] > 0 and len(hospital_positions[h][1]) != 0:
-            s = hospital_positions[h][1].pop(0)
-            s = int(s)
-            if final_pairing[s] is None:
-                # Student is unmatched and accepts hospital (regardless of position)
-                if student_positions[s][h] is not None:
-                    final_pairing[s] = h
-                    # Reduce the number of available positions for particular hospital 'h'
-                    hospital_positions[h] = (hospital_positions[h][0] - 1, hospital_positions[h][1])
-                    # Add hospital h back to the queue if it still has more open positions
-                    num_open_positions = hospital_positions[h][0]
-                    if num_open_positions > 0:
-                        hospitalQ.append(h)
-                else:  # Student does not desire hospital, add hospital back to queue
-                    hospitalQ.append(h)
-
-            elif final_pairing[s] is not None:
-                # Student is matched, so hospital must compare itself to current matched hospital
-                if student_positions[s][h] is not None:
-                    # Hospital exists in student priority list
-                    h_curr = student_positions[s][final_pairing[s]]  # Retrieve id of current hospital
-                    h_prime = student_positions[s][h]
-                    if h_curr < h_prime:  # Student prefers current hospital
-                        hospitalQ.append(h)
-                    else:  # Student prefers new hospital to old
-
-                        # Alter the number of available postions for h_curr and h_prime
-                        hospital_positions[h] = (hospital_positions[h][0] - 1, hospital_positions[h][1])
-                        hospital_positions[final_pairing[s]] = (hospital_positions[final_pairing[s]][0] + 1, hospital_positions[final_pairing[s]][1])
-
-                        hospitalQ.append(final_pairing[s])  # old hospital gets dropped and must be added to queue
-                        # Append new hospital back to queue if more positions are available
-                        num_open_positions = hospital_positions[h][0]
-                        if num_open_positions > 0:
-                            hospitalQ.append(h)
-
-                        # Replace old hospital with preferred new hospital
-                        final_pairing[s] = h
-
-                else:  # Student is matched and does not desire new hospital, even after consideration
-                    hospitalQ.append(h)
+    while free:
+        h = free.pop()
+        prefs = hospital_prefs[h]
+        n = len(prefs)
+        i = next_idx[h]
+        # Propose until h is full or has exhausted its list; no re-queueing needed.
+        while remaining[h] > 0 and i < n:
+            s = prefs[i]
+            i += 1
+            rank = student_rank[s]
+            if h not in rank:
+                continue  # student finds h unacceptable
+            cur = final_pairing[s]
+            if cur is None:
+                final_pairing[s] = h
+                remaining[h] -= 1
+            elif rank[h] < rank[cur]:
+                # Student prefers h: switch, freeing a seat at the old hospital.
+                final_pairing[s] = h
+                remaining[h] -= 1
+                remaining[cur] += 1
+                if next_idx[cur] < len(hospital_prefs[cur]):
+                    free.append(cur)
+        next_idx[h] = i
 
     return final_pairing
